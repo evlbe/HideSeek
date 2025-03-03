@@ -1,0 +1,19 @@
+{
+  "name": "hideseek",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/evlbe/HideSeek.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/evlbe/HideSeek/issues"
+  },
+  "homepage": "https://github.com/evlbe/HideSeek#readme",
+  "description": ""
+}
