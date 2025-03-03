@@ -16,5 +16,8 @@
     "url": "https://github.com/evlbe/HideSeek/issues"
   },
   "homepage": "https://github.com/evlbe/HideSeek#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
 }
