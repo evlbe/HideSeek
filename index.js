@@ -1,6 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
 const port = process.env.PORT || 3000;
 
 // Middleware to parse JSON bodies
@@ -10,14 +12,16 @@ const locations = [];
 
 // Endpoint to store a location
 app.post('/store_location', (req, res) => {
-  const { latitude, longitude } = req.body;
-  if (latitude && longitude) {
-    locations.push({ lat: latitude, lon: longitude });
-    res.sendStatus(200);
-  } else {
-    res.status(400).json({ error: 'Invalid location data' });
-  }
-});
+    const { latitude, longitude } = req.body;
+    if (latitude && longitude) {
+      const location = { lat: latitude, lon: longitude };
+      locations.push(location);
+      io.emit('newLocation', location);
+      res.sendStatus(200);
+    } else {
+      res.status(400).json({ error: 'Invalid location data' });
+    }
+  });
 
 // Endpoint to retrieve all locations
 app.get('/locations', (req, res) => {
