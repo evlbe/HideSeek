@@ -1,21 +1,17 @@
-// index.js
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Use body-parser middleware to parse JSON requests
+// Middleware to parse JSON bodies
 app.use(bodyParser.json());
 
-// For demonstration purposes, we'll store locations in-memory.
-// In production, use a persistent database (e.g., Heroku Postgres).
 const locations = [];
 
 // Endpoint to store a location
 app.post('/store_location', (req, res) => {
   const { latitude, longitude } = req.body;
   if (latitude && longitude) {
-    // Store the location. In a real app, you might add timestamps or user IDs.
     locations.push({ lat: latitude, lon: longitude });
     res.sendStatus(200);
   } else {
