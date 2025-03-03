@@ -30,79 +30,85 @@ app.get('/locations', (req, res) => {
 
 // Serve the main page with inline HTML and client-side JS
 app.get('/', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>User Locations Map</title>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-      <style>
-        #map { height: 500px; }
-      </style>
-    </head>
-    <body>
-      <div id="map"></div>
-      <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-      <script>
-        document.addEventListener('DOMContentLoaded', function() {
-          // Initialize the map centered at [0, 0] with zoom level 2
-          const map = L.map('map').setView([0, 0], 2);
-          
-          // Add OpenStreetMap tiles
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-          }).addTo(map);
-      
-          // Function to send the user's location to the server
-          function sendLocation(lat, lon) {
-            fetch('/store_location', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ latitude: lat, longitude: lon })
-            })
-            .then(response => {
-              if (!response.ok) {
-                throw new Error('Failed to store location');
-              }
-              console.log('Location successfully stored.');
-            })
-            .catch(error => console.error('Error storing location:', error));
-          }
-      
-          // Request the user's current location
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-                console.log('User location:', lat, lon);
-                sendLocation(lat, lon);
-              },
-              (error) => console.error('Error obtaining geolocation:', error)
-            );
-          } else {
-            console.error('Geolocation is not supported by this browser.');
-          }
-      
-          // Function to load and display all stored locations on the map
-          function loadLocations() {
-            fetch('/locations')
-              .then(response => response.json())
-              .then(locations => {
-                locations.forEach(loc => {
-                  L.marker([loc.lat, loc.lon]).addTo(map);
-                });
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>User Locations Map</title>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <style>
+          #map { height: 500px; }
+        </style>
+      </head>
+      <body>
+        <div id="map"></div>
+        <!-- Load Leaflet and Socket.io -->
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the Leaflet map
+            const map = L.map('map').setView([0, 0], 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+        
+            // Function to send the user's location to the server
+            function sendLocation(lat, lon) {
+              fetch('/store_location', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ latitude: lat, longitude: lon })
               })
-              .catch(error => console.error('Error fetching locations:', error));
-          }
-      
-          // Load locations when the page loads
-          loadLocations();
-        });
-      </script>
-    </body>
-    </html>
-  `);
-});
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error('Failed to store location');
+                }
+                console.log('Location successfully stored.');
+              })
+              .catch(error => console.error('Error storing location:', error));
+            }
+        
+            // Request the user's current location
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(
+                (position) => {
+                  const lat = position.coords.latitude;
+                  const lon = position.coords.longitude;
+                  console.log('User location:', lat, lon);
+                  sendLocation(lat, lon);
+                },
+                (error) => console.error('Error obtaining geolocation:', error)
+              );
+            } else {
+              console.error('Geolocation is not supported by this browser.');
+            }
+        
+            // Load existing locations from the server
+            function loadLocations() {
+              fetch('/locations')
+                .then(response => response.json())
+                .then(locations => {
+                  locations.forEach(loc => {
+                    L.marker([loc.lat, loc.lon]).addTo(map);
+                  });
+                })
+                .catch(error => console.error('Error fetching locations:', error));
+            }
+        
+            loadLocations();
+        
+            // Establish a Socket.io connection to receive real-time updates
+            const socket = io();
+            socket.on('newLocation', function(location) {
+              // Add the new marker when a new location event is received
+              L.marker([location.lat, location.lon]).addTo(map);
+            });
+          });
+        </script>
+      </body>
+      </html>
+    `);
+  });
 app.listen(process.env.PORT || 3000);
