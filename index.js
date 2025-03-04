@@ -39,16 +39,22 @@ app.get('/', (req, res) => {
         <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
         <style>
           #map { height: 500px; }
+          #share-btn {
+            margin: 10px;
+            padding: 8px 16px;
+            font-size: 16px;
+          }
         </style>
       </head>
       <body>
+        <button id="share-btn">Share My Location</button>
         <div id="map"></div>
         <!-- Load Leaflet and Socket.io -->
         <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
         <script src="/socket.io/socket.io.js"></script>
         <script>
           document.addEventListener('DOMContentLoaded', function() {
-            // Initialize the Leaflet map
+            // Initialize the map centered at [0, 0] with zoom level 2
             const map = L.map('map').setView([0, 0], 2);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
               attribution: '© OpenStreetMap contributors'
@@ -70,22 +76,14 @@ app.get('/', (req, res) => {
               .catch(error => console.error('Error storing location:', error));
             }
         
-            // Request the user's current location
-            if (navigator.geolocation) {
-              navigator.geolocation.getCurrentPosition(
-                (position) => {
-                  const lat = position.coords.latitude;
-                  const lon = position.coords.longitude;
-                  console.log('User location:', lat, lon);
-                  sendLocation(lat, lon);
-                },
-                (error) => console.error('Error obtaining geolocation:', error)
-              );
-            } else {
-              console.error('Geolocation is not supported by this browser.');
-            }
+            // Socket.io connection for real-time updates
+            const socket = io();
+            socket.on('newLocation', function(location) {
+              // Add a marker for each new location received
+              L.marker([location.lat, location.lon]).addTo(map);
+            });
         
-            // Load existing locations from the server
+            // Load existing locations from the server on page load
             function loadLocations() {
               fetch('/locations')
                 .then(response => response.json())
@@ -96,14 +94,25 @@ app.get('/', (req, res) => {
                 })
                 .catch(error => console.error('Error fetching locations:', error));
             }
-        
             loadLocations();
         
-            // Establish a Socket.io connection to receive real-time updates
-            const socket = io();
-            socket.on('newLocation', function(location) {
-              // Add the new marker when a new location event is received
-              L.marker([location.lat, location.lon]).addTo(map);
+            // Use a button to trigger geolocation (required for Safari)
+            document.getElementById('share-btn').addEventListener('click', function() {
+              if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                  function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    console.log('User location:', lat, lon);
+                    sendLocation(lat, lon);
+                  },
+                  function(error) {
+                    console.error('Error obtaining geolocation:', error);
+                  }
+                );
+              } else {
+                console.error('Geolocation is not supported by this browser.');
+              }
             });
           });
         </script>
@@ -111,7 +120,7 @@ app.get('/', (req, res) => {
       </html>
     `);
   });
-  
+
 http.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
