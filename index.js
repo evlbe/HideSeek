@@ -38,6 +38,7 @@ app.get('/', (req, res) => {
           <!-- Viewport meta tag for mobile responsiveness -->
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>User Locations Map</title>
+          <h1>Hi sasha</h1>
           <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
           <style>
             /* Basic reset and font settings */
